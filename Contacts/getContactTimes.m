@@ -1,6 +1,6 @@
 
 function getContactTimes(fpath,nfile,plotFig)
-%getContactTimes Reads ntrode trace of contact signal and calculates times
+% getContactTimes Reads ntrode trace of contact signal and calculates times
 %   and indices of contact onsets. Requires various manually selected
 %   thresholds.
 % Inputs:
@@ -8,7 +8,7 @@ function getContactTimes(fpath,nfile,plotFig)
 %   - nfile: ntrode filename
 %   - plotFig: 'y' or 'n', currently unused flag to block or allow figure
 %   plotting
-%
+% 
 %   Adapted from Amanda's getContactTimes_wholetrace_timesOnly.m
 
 
@@ -27,7 +27,7 @@ totalTime = length(contactTop)*dt;
 %Get trial start times, will need them if cutting out data
 trialStartSig = contacts.trial_start;
 trialStartTimes = getEventTimes(trialStartSig, samplingRate,'negative');
-%xvect=0:dt:(length(contactBottom)-1)*dt; 
+%xvect=0:dt:(length(contactBottom)-1)*dt;
 
 j = figure;
 h = figure;
@@ -53,7 +53,7 @@ xlabel('time (ms)')
 % startPlotTop = startPlotTop/dt;
 % endPlotTop = input('What time point to end top signal plot? ');
 % endPlotTop = endPlotTop/dt;
-% 
+%
 % startPlotBottom = input('What time point to begin bottom signal plot? ');
 % startPlotBottom = startPlotBottom/dt;
 % endPlotBottom = input('What time point to end bottom signal plot? ');
@@ -118,23 +118,25 @@ if isequal(polesMoving,'y')
     %Cut out motor artifact around trial start times
     motorCutTop = [170, 100];
     preMotorTop = 100;
-    motorCutBottom = [190, 100];
+    motorCutBottom = [170, 110];
     preMotorBottom = 100;
     contactTop = cutoutNoise(contactTop,trialStartTimes,dt,motorCutTop(1)); %cut out around motor moving into position (at trial start times)
     contactTop = cutoutNoise(contactTop,trialStartTimes+stimDur-preMotorTop,dt,motorCutTop(2)); %cut out around motor moving out of position (at end of stim dur)
     contactBottom = cutoutNoise(contactBottom,trialStartTimes,dt,motorCutBottom(1));
     contactBottom = cutoutNoise(contactBottom,trialStartTimes+stimDur-preMotorBottom,dt,motorCutBottom(2));
+    %consider adding something to check the cutoffs
+    
     
     %Plot new contact signal with motor artifact removed
     figure(j)
-    plot(dt:dt:length(contactTop(startPlotTop:endPlotTop))*dt,contactTop(startPlotTop:endPlotTop),'m')
+    plot(dt:dt:length(contactTop(startPlotTop:endPlotTop))*dt,contactTop(startPlotTop:endPlotTop),'g')
     disp('press any key to continue, this is your last chance to zoom in/out before thresholding')
     pause %if go straight to input, matlab won't let you zoom in the figure
     threshTop = input('What threshold value to use for top contacts? '); %0.2;
     line([0 length(contactTop(startPlotTop:endPlotTop))*dt],[threshTop threshTop],'LineStyle','--','Color','m')
     
     figure(h)
-    plot(dt:dt:length(contactBottom(startPlotBottom:endPlotBottom))*dt,contactBottom(startPlotBottom:endPlotBottom),'m')
+    plot(dt:dt:length(contactBottom(startPlotBottom:endPlotBottom))*dt,contactBottom(startPlotBottom:endPlotBottom),'g')
     disp('press any key to continue, this is your last chance to zoom in/out before thresholding')
     pause
     threshBottom = input('What threshold value to use for bottom contacts? '); %0.2;
@@ -145,7 +147,7 @@ end
 %Get contact times; this will pull out each little peak in the signal and
 %call it a contact time. You can set a refractory period, set by 'refract'
 %variable
-refract = 0; %25; %in ms
+refract = 5; %25; %in ms
 
 contactTopInd = calcContactTimes_c(contactTop,threshTop,refract,dt);
 contactTopTimes = round(contactTopInd*dt);
@@ -156,12 +158,12 @@ contactBottomTimes = round(contactBottomInd*dt);
 disp(['Found ',num2str(length(contactBottomTimes)),' bottom contacts'])
 
 %just get contacts within range of what's being plotted
-% figure(j) 
+% figure(j)
 % contactsPlotTop = contactTopInd(contactTopInd > startPlotTop & contactTopInd < endPlotTop);
 % contactsPlotTop = contactsPlotTop - startPlotTop;
 % plot(contactsPlotTop*dt,contactTop(startPlotTop+contactsPlotTop),'ko')
-% 
-% figure(h) 
+%
+% figure(h)
 % contactsPlotBottom = contactBottomInd(contactBottomInd > startPlotBottom & contactBottomInd < endPlotBottom);
 % contactsPlotBottom = contactsPlotBottom - startPlotBottom;
 % plot(contactsPlotBottom*dt,contactBottom(startPlotBottom+contactsPlotBottom),'ko')
@@ -177,7 +179,7 @@ line([0 length(contactTop(startPlotTop:endPlotTop))*dt],[baselineTop baselineTop
 
 figure(h)
 line([0 length(contactBottom(startPlotBottom:endPlotBottom))*dt],[baselineBottom baselineBottom],'LineStyle','--','Color','k')
-    
+
 %Call it a new contact if the signal returns to baseline
 tempContacts = contactTopInd;
 c=1;
@@ -194,7 +196,7 @@ while c < length(tempContacts)
     end
 end
 %plot the ones we kept
-figure(j) 
+figure(j)
 contactsPlotTop = tempContacts(tempContacts > startPlotTop & tempContacts < endPlotTop);
 contactsPlotTop = contactsPlotTop - startPlotTop;
 plot(contactsPlotTop*dt,contactTop(startPlotTop+contactsPlotTop),'kp')
@@ -210,7 +212,7 @@ tempContacts = contactBottomInd;
 c=1;
 while c < length(tempContacts)
     tempSig = contactBottom(tempContacts(c):tempContacts(c+1));
-    crossing = tempSig<=(baselineBottom); %does the signal between contacts cross the threshold?
+    crossing = tempSig<=(baselineBottom-.2); %does the signal between contacts cross the threshold?
     if sum(crossing)<1 %if not, delete this point for deletion
         tempContacts(c+1)=[];
     else
@@ -219,14 +221,14 @@ while c < length(tempContacts)
     if length(tempContacts)==1 %deleted all the contacts except the first, which you never check
         break
     end
-%     disp(num2str(length(tempContacts)))
-%     disp(num2str(c))
+    %     disp(num2str(length(tempContacts)))
+    %     disp(num2str(c))
 end
 %plot the ones we kept
-figure(h) 
+figure(h)
 contactsPlotBottom = tempContacts(tempContacts > startPlotBottom & tempContacts < endPlotBottom);
 contactsPlotBottom = contactsPlotBottom - startPlotBottom;
-plot(contactsPlotBottom*dt,contactBottom(startPlotBottom+contactsPlotBottom),'kp')
+plot(contactsPlotBottom*dt,contactBottom(startPlotBottom+contactsPlotBottom),'co')
 disp('Look around at the contacts, press any key to continue')
 pause
 %accept or reject deletions
@@ -239,6 +241,7 @@ end
 
 %check another set of trials
 %Select a range of data to plot by choosing a set of trials
+disp('Check another set of trials')
 firstTrialTop = input('What trial to begin top signal plot? ');
 startPlotTop = trialStartTimes(firstTrialTop);
 startPlotTop = startPlotTop/dt;
@@ -255,14 +258,17 @@ endPlotBottom = endPlotBottom/dt;
 %plot the filtered/cut contact signal
 figure(j)
 hold off
- plot(dt:dt:length(contactTop(startPlotTop:endPlotTop))*dt,contactTop(startPlotTop:endPlotTop),'b')
-   hold on
-   title(['top contacts, trials ' num2str(firstTrialTop) ' to ' num2str(stopTrialBottom)])
-   xlabel('ms')
+plot(dt:dt:length(contacts.top_contact(startPlotTop:endPlotTop))*dt,contacts.top_contact(startPlotTop:endPlotTop),'r')
+hold on
+plot(dt:dt:length(contactTop(startPlotTop:endPlotTop))*dt,contactTop(startPlotTop:endPlotTop),'b')
+title(['top contacts, trials ' num2str(firstTrialTop) ' to ' num2str(stopTrialBottom)])
+xlabel('ms')
+
 figure(h)
 hold off
+plot(dt:dt:length(contacts.bot_contact(startPlotBottom:endPlotBottom))*dt,contacts.bot_contact(startPlotBottom:endPlotBottom),'r')
+hold on
 plot(dt:dt:length(contactBottom(startPlotBottom:endPlotBottom))*dt,contactBottom(startPlotBottom:endPlotBottom),'b')
-    hold on
 title(['bottom contacts, trials ' num2str(firstTrialBottom) ' to ' num2str(stopTrialBottom)])
 xlabel('ms')
 
