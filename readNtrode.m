@@ -19,7 +19,7 @@ end
 
 for i=1:length(behavior_signals)
     fname = [ntrodefile '-' behavior_signals{i} '.dat'];
-    sig(:,i) = readContinuousDAT([filepath fname]);
+    sig(:,i) = double(readContinuousDAT([filepath fname]));
 end
 
 traces=array2table(sig);
