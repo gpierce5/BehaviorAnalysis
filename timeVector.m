@@ -3,7 +3,7 @@ function [t, dt] = timeVector( signal, samplingRate )
 %   
 
 dt = 1000*(1/samplingRate);
-t=0:dt:(length(signal)-1)*dt;
+t=dt:dt:(length(signal))*dt;
 
 
 end
